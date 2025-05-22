@@ -43,8 +43,6 @@ install.packages(c("ggplot2", "dplyr", "tidyr", "kableExtra"))
 
 ## 📈 Key Visualizations
 
-## 📈 Key Visualizations
-
 | Histogram        | Scatter Plot        |
 |-----------------|---------------------|
 | ![Discount Distribution](plots/histogram.png) | ![Correlation](plots/scatter.png) |
