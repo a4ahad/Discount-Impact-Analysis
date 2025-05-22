@@ -51,8 +51,14 @@ install.packages(c("ggplot2", "dplyr", "tidyr", "kableExtra"))
 |-----------------|---------------------|
 | ![Boxplot](plots/boxplot.png) | ![Density Plot](plots/density.png) |
 
+## 📄 Full Analysis Report
+Access the complete interactive HTML report:  
+[View Report](analysis/analysis.html)
 
-
+Features:
+- Interactive visualizations
+- Detailed statistical analysis
+- Complete methodology documentation
 
 ## 📌 Results Summary
 
