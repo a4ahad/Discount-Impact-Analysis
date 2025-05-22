@@ -35,7 +35,7 @@ Discount-Impact-Analysis/
 ## 🛠️ Installation & Usage
 ```bash
 # Clone repository
-git clone https://github.com/a4ahad/Discount-Impact-Reviews-Analysis.git
+git clone https://github.com/a4ahad/Discount-Impact-Analysis.git
 
 # Install dependencies
 install.packages(c("ggplot2", "dplyr", "tidyr", "kableExtra"))
