@@ -16,12 +16,20 @@ Analyzing the relationship between product discounts and customer reviews for Ni
 ## 📂 Repository Structure
 
 ```
-project-root/
-├── analysis.Rmd # Full R Markdown analysis
+Discount-Impact-Analysis/
+├── LICENSE.md # Project license information
+├── README.md # Project documentation
+├── analysis/ # Analysis-related files
+│   ├── analysis.Rmd # Full R Markdown analysis
+│   ├── analysis.html # HTML output of the analysis
+├── data/ # Dataset (consider gitignoring)
+│   ├── nike_vs_addidas.csv # Dataset file
 ├── plots/ # Generated visualizations
-├── data/ # Dataset (gitignored)
-├── README.md # This documentation
-└── style.css # Custom formatting
+│   ├── boxplot.png # Boxplot visualization
+│   ├── density.png # Density plot visualization
+│   ├── histogram.png # Histogram visualization
+│   ├── scatter.png # Scatter plot visualization
+
 ```
 
 ## 🛠️ Installation & Usage
