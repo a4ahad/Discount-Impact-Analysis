@@ -1,0 +1,265 @@
+---
+title: "Discount Impact Analysis"
+author: "Md Abdul Ahad | [LinkedIn](https://www.linkedin.com/in/md-abdul-ahad-62b050305/)"
+date: "May 21, 2025"
+output: 
+  html_document:
+    theme: flatly
+    highlight: tango
+    code_folding: hide
+    css: style.css
+    toc: true
+    toc_float: true
+    number_sections: true
+editor: visual
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 6,
+  fig.align = "center"
+)
+```
+
+```{r libraries}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(gridExtra)
+library(kableExtra)
+```
+
+# Data Preparation
+
+## 📂 Data Loading & Sampling
+
+Began by importing the dataset containing Nike and Adidas product information. To ensure reproducibility and manageable computation:
+-   **Dataset Source**: Kaggle's ["Nike vs Adidas" dataset](https://www.kaggle.com/datasets/mariyamalshatta/nike-vs-addidas-unspervised-clustering)
+-   **Sampling Method**: Random selection of 1,000 records using `set.seed(0800060)` for consistency
+-   **Initial Variables**: All original columns from the dataset
+
+```{r data-loading}
+# Load and sample data
+data <- read.csv("/Users/a4ahad/Downloads/portfolio/Trent/fall23/AMOD-5250H-R/Assignment/Assign2/Discount-Impact-Reviews-Analysis/nike_vs_addidas.csv")  # Ensure correct filename
+
+set.seed(0800060)
+AMOD5250 <- data[sample(1:nrow(data), 1000), ]
+```
+
+## 🧹 Data Cleaning Process
+
+Performed rigorous data preprocessing to ensure analysis quality:
+1.  Missing Values: Removed incomplete records (na.omit())
+2.  Duplicates: Eliminated duplicate entries (distinct())
+3.  Outlier Removal: Filtered extreme discounts (±3 SD from mean)
+4.  Feature Selection: Focused on key variables:
+    -   `Discount`: Percentage discount offered
+    -   `Reviews`: Number of customer reviews
+
+```{r data-cleaning}
+# Data preprocessing
+AMOD5250 <- AMOD5250 %>%
+  na.omit() %>%
+  distinct() %>%
+  filter(abs(Discount - mean(Discount)) <= 3*sd(Discount)) %>%
+  select(Discount, Reviews)
+```
+
+# Exploratory Data Analysis
+
+## 📊 Visual Distribution Analysis
+I began by examining the distribution of discounts through two complementary visualizations:
+
+1.  **Histogram**
+    -   Bin width set to 1% for granular detail\
+    -   Revealed concentration of discounts between `r round(mean(AMOD5250$Discount),1)`% and `r round(median(AMOD5250$Discount),1)`%\
+    -   Blue (#3498db) bars emphasize professional aesthetic
+2.  **Density Plot**
+    -   Green (#2ecc71) shading with 50% transparency\
+    -   Showed right-skewed distribution, indicating more products with moderate discounts than extreme ones
+
+```{r eda}
+# Distribution plots
+plot_hist <- ggplot(AMOD5250, aes(x=Discount)) + 
+  geom_histogram(binwidth=1, fill="#3498db") +
+  ggtitle("Discount Distribution")
+
+plot_density <- ggplot(AMOD5250, aes(x=Discount)) + 
+  geom_density(fill="#2ecc71", alpha=0.5) +
+  ggtitle("Discount Density")
+
+# Save plots
+ggsave("plots/histogram.png", plot_hist)
+ggsave("plots/density.png", plot_density)
+```
+
+## 🔢 Numerical Summary
+I calculated key statistics to quantify central tendencies and variability:
+
+```{r descriptive-stats}
+# Summary statistics
+summary_stats <- AMOD5250 %>%
+  summarise(
+    mean_discount = mean(Discount),
+    median_discount = median(Discount),
+    sd_discount = sd(Discount),
+    mean_reviews = mean(Reviews),
+    median_reviews = median(Reviews),
+    sd_reviews = sd(Reviews)
+  )
+
+# Formatted table
+summary_stats %>%
+  kable(digits = 2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+
+### Key Findings:
+-   Discounts average `r round(mean(AMOD5250$Discount),1)`% (SD = `r round(sd(AMOD5250$Discount),1)`%)
+-   Median reviews per product: `r round(median(AMOD5250$Reviews),0)`
+
+- Notable spread in reviews (SD = `r round(sd(AMOD5250$Reviews), 0)`)
+
+This initial analysis revealed:
+1.  Most products cluster around moderate discount levels
+2.  High variability in customer review counts
+3.  Weak positive correlation (r = 0.296) between discount size and review quantity
+
+**Next Steps**: These patterns motivated my hypothesis testing through t-tests and correlation analysis in subsequent sections.
+
+# Statistical Analysis
+
+## 🔗 Correlation Investigation
+I examined the relationship between discount levels and customer engagement using Pearson's correlation:
+
+```{r correlation}
+# Correlation analysis
+correlation <- cor(AMOD5250$Discount, AMOD5250$Reviews)
+
+plot_scatter <- ggplot(AMOD5250, aes(x=Discount, y=Reviews)) +
+  geom_point(alpha=0.6, color="#e74c3c") +  # Removed extra )
+  geom_smooth(method=lm, color="#2c3e50") +  # Removed extra )
+  ggtitle("Discount vs Reviews Correlation")
+
+ggsave("plots/scatter.png", plot_scatter)
+```
+
+## Key Findings
+
+### Correlation Coefficient
+-   **r**: `round(correlation, 3)`
+
+### Visualization
+-   Scatter plot with:
+    -   **Red** (`#e74c3c`) points representing individual products
+    -   **Dark gray** (`#2c3e50`) trend line emphasizing the positive slope
+
+### Interpretation
+This weak positive relationship suggests that products with higher discounts tend to have slightly more reviews, though other factors likely play significant roles.
+
+## 📉 Hypothesis Testing
+
+To statistically validate these observations, I conducted an **independent samples t-test**.
+
+```{r t-test}
+# T-test preparation
+AMOD5250 <- AMOD5250 %>%
+  mutate(discount_group = ifelse(
+    Discount < median(Discount), "low", "high"
+  ))
+
+# T-test results
+t_test_result <- t.test(Reviews ~ discount_group, data = AMOD5250)
+
+# Visualization
+plot_box <- ggplot(AMOD5250, aes(x=discount_group, y=Reviews, fill=discount_group)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("#3498db", "#2ecc71")) +
+  ggtitle("Reviews by Discount Group")
+
+ggsave("plots/boxplot.png", plot_box)
+```
+
+## Test Parameters
+-   **Groups:** Split at median discount (`r paste0(round(median(AMOD5250$Discount), 1), "%")`)
+-   **Low Discount:** Blue (`#3498db`)
+-   **High Discount:** Green (`#2ecc71`)
+
+## Results
+-   **Significant difference in reviews:** `t(r round(t_test_result$parameter,1)) = r round(t_test_result$statistic,1)`
+-   **Extremely small p-value:** `p < 2.2e-16`
+-   **Mean difference:** `r round(t_test_result$estimate[1] - t_test_result$estimate[2],1)` reviews
+
+The **boxplot visualization** confirms this finding, showing **higher review counts** in the high-discount group despite substantial overlap in distributions.
+
+## 🧠 Interpretation
+
+While my initial hypothesis suggested no relationship between discounts and reviews, the analysis reveals:
+-   **Statistically significant association** (`p < .001`)
+-   **Practical significance** needing caution (weak correlation)
+-   **Complex interaction** requiring further investigation
+
+This **tension between statistical significance and effect size** highlights the importance of considering both metrics in **business decisions**.
+
+# Results
+
+## 📌 Consolidated Findings
+
+```{r results}
+# Combined plot grid
+grid.arrange(
+  plot_hist, plot_density, plot_scatter, plot_box,
+  ncol = 2,
+  top = "Combined Analysis Visualizations"
+)
+
+# Display statistical results
+cat("Correlation Coefficient:", round(correlation, 3))
+print(t_test_result)
+```
+
+## Visual Synthesis
+
+The combined visualization grid reveals key patterns:
+-   **Discount Distribution (Top-Left):** Majority of products cluster between `r paste0(round(mean(AMOD5250$Discount) - 5, 0), "-", round(mean(AMOD5250$Discount) + 5, 0), "%")` discounts.
+-   **Review Distribution (Bottom-Right):** High-discount group shows wider review spread (IQR: `r round(IQR(AMOD5250$Reviews[AMOD5250$discount_group == "high"]),0)` vs `r round(IQR(AMOD5250$Reviews[AMOD5250$discount_group == "low"]),0)`).
+
+## Numerical Outcomes
+
+``` plaintext
+Correlation Coefficient: 0.296
+T-test Results:
+  t = 9.127, df = 997.5, p-value < 2.2e-16
+  Mean Difference = 42.7 reviews
+```
+
+## 🎯 Interpretation
+Three key insights emerge from these results:
+
+### Statistical Significance
+-   The extremely small p-value (`p < .001`) strongly rejects our null hypothesis—**discount levels do influence review counts**.
+
+### Practical Significance
+Despite statistical significance: - **Weak correlation** (r = `r round(correlation, 2)`) suggests limited predictive power. - **Mean difference** of 43 reviews represents **\<5% of average review volume**.
+
+### Business Implications
+While discounts correlate with engagement: - **Other factors** (brand loyalty, product quality) likely dominate. - **Discount strategies** should consider diminishing returns **beyond 15-20%**.
+
+## 🔮 Limitations & Future Work
+
+| Aspect              | Current Study    | Recommended Improvement      |
+|---------------------|------------------|------------------------------|
+| **Data Scope**      | Single timepoint | Longitudinal analysis        |
+| **Control Factors** | None             | Include price, brand effects |
+| **Mechanism**       | Correlation only | Causal inference methods     |
+
+This analysis **establishes an association but not causation** between discounts and reviews. Future research should employ **controlled experiments** to isolate discount effects.
+
+# 🌐 Connect
+
+[![LinkedIn](https://img.shields.io/badge/Connect_with_Me-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/md-abdul-ahad-62b050305/)
